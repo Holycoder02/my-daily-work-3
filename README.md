@@ -45,6 +45,12 @@ From this folder, run:
 & ".venv/Scripts/python.exe" "movie_rating_prediction.py"
 ```
 
+Install dependencies first:
+
+```powershell
+& ".venv/Scripts/python.exe" -m pip install -r requirements.txt
+```
+
 Optional arguments:
 
 ```powershell
