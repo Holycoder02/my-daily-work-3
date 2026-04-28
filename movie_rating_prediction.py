@@ -12,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
+import joblib
+import json
 
 
 @dataclass
@@ -191,6 +193,8 @@ def main():
     parser.add_argument("--metadata", default="movies_metadata.csv", help="Path to movies metadata CSV")
     parser.add_argument("--credits", default="credits.csv", help="Path to credits CSV")
     parser.add_argument("--min-votes", type=int, default=20, help="Minimum number of ratings per movie")
+    parser.add_argument("--output-model", default="best_model.joblib", help="Path to save the trained model")
+    parser.add_argument("--metrics-out", default="metrics.json", help="Path to save evaluation metrics")
     args = parser.parse_args()
 
     df = build_feature_dataset(
@@ -216,6 +220,27 @@ def main():
     print("\nSample predictions:")
     for idx, pred in zip(sample.index, sample_preds):
         print(f"- idx={idx}: predicted={pred:.3f}, actual={y_test.loc[idx]:.3f}")
+
+    # Save best model and basic metrics
+    try:
+        joblib.dump(best_model, args.output_model)
+        print(f"Saved best model to: {args.output_model}")
+    except Exception as e:
+        print(f"Warning: could not save model to {args.output_model}: {e}")
+
+    metrics = {r.name: {"mae": r.mae, "rmse": r.rmse, "r2": r.r2} for r in results}
+    summary = {
+        "best_model": sorted(results, key=lambda x: x.rmse)[0].name,
+        "n_movies": int(df['movieId'].nunique()),
+        "avg_target": float(df['mean_rating'].mean()),
+        "metrics": metrics,
+    }
+    try:
+        with open(args.metrics_out, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2)
+        print(f"Saved metrics to: {args.metrics_out}")
+    except Exception as e:
+        print(f"Warning: could not save metrics to {args.metrics_out}: {e}")
 
 
 if __name__ == "__main__":
